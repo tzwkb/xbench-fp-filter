@@ -13,3 +13,6 @@ data/
 
 # 敏感配置文件（含 API KEY）
 config.py
+
+# 日报（内部记录，不公开）
+docs/dailies/
