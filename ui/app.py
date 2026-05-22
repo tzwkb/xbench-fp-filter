@@ -5,17 +5,17 @@ Streamlit UI — False Positive Filter for game localization QA.
 Professional Engineering Edition.
 
 Run:
-    streamlit run app.py
+    streamlit run ui/app.py
 """
 
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
 
-from ui_backend import (
+from ui.backend import (
     RunConfig, default_config_from_module, apply_config,
     process_file, build_filtered_xlsx, build_analysis_xlsx, build_zip_bytes,
     test_api_connection,

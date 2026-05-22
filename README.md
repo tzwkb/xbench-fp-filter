@@ -15,7 +15,7 @@ run.bat
 或手动：
 
 ```
-streamlit run app.py
+streamlit run ui/app.py
 ```
 
 首次运行前在 Streamlit「参数设置」页填入 API Key 和 Base URL。
@@ -26,8 +26,9 @@ streamlit run app.py
 
 ```
 fp-filter/
-├── app.py               Streamlit 页面路由、组件渲染、进度轮询
-├── ui_backend.py        UI 与后端适配层：RunConfig、ProcessingTask、导出函数、模型管理
+├── ui/                  前端模块
+│   ├── app.py           Streamlit 页面路由、组件渲染、进度轮询
+│   └── backend.py       UI 与后端适配层：RunConfig、ProcessingTask、导出函数、模型管理
 ├── run.bat / setup.bat  Windows 一键启动 / 环境初始化（下载嵌入版 Python）
 ├── config.py / config_template.py  运行时配置及脱敏模板
 ├── requirements.txt     Python 依赖

@@ -23,5 +23,5 @@ if not exist config.py (
     pause & exit /b 1
 )
 
-%PY% -m streamlit run app.py --browser.gatherUsageStats false
+%PY% -m streamlit run ui/app.py --browser.gatherUsageStats false
 pause

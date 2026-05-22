@@ -278,7 +278,7 @@ PRESET_MODELS = [
 ]
 
 _CUSTOM_MODELS_FILE = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "data", "custom_models.json"
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "custom_models.json"
 )
 
 
