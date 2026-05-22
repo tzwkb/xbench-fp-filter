@@ -36,7 +36,7 @@ fp-filter/
 │   ├── xbench.py        Xbench Excel 解析 + 行过滤
 │   └── llm_review.py    LLM 复核：prompt、async 调用、重试、结果解析
 │
-├── rag/                 向量检索层（当前 UI 未启用，保留供后续接入）
+├── rag/                 向量检索层 ⚠️ 待完善（实验阶段，功能不完整）
 │   ├── store.py         案例库（SQLite + FAISS + bge-m3 embedding）
 │   ├── search.py        向量检索 + 决策路由
 │   └── engine.py        RAGEngine：完整 RAG 流水线统一入口
@@ -54,7 +54,7 @@ fp-filter/
 ```
 
 **当前 UI 流程：** 解析 → LLM 独立判断，不走向量检索。
-**RAG 后端** 保持完整，未来可通过 `engine.py` 接回。
+**RAG 后端** 代码框架已搭建但仍在完善中，尚未接入 UI 主流程。
 
 ---
 
