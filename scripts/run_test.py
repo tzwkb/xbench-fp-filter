@@ -31,7 +31,7 @@ def pct(n, d): return f"{n}/{d}（{100*n/d:.1f}%）" if d else "N/A"
 # ══════════════════════════════════════════════════════════════════════════════
 
 def cmd_real(args):
-    from rag.search import search_similar, decide, serialize_search_result
+    from rag.search import search_by_term, decide, serialize_search_result
     from core.llm_review import llm_secondary_review
     import config
 
@@ -54,12 +54,11 @@ def cmd_real(args):
         if isinstance(gt, int):
             gt = "真错误" if gt == 1 else "误报"
         try:
-            results  = search_similar(
+            results  = search_by_term(
                 error_description=q["error_description"],
                 error_type=q["error_type"],
                 source_text=q.get("source_text", ""),
                 target_text=q.get("target_text", ""),
-                ground_truth=gt,
             )
             decision = decide(results)
             rec = serialize_search_result(q, results, decision, ground_truth=gt)
@@ -109,7 +108,7 @@ def cmd_real(args):
                 error_description=q["error_description"],
                 source_text=q.get("source_text", ""),
                 target_text=q.get("target_text", ""),
-                search_results=[],
+                search_results=search_results,
                 severity=q.get("severity", "Minor"),
                 note=q.get("note", ""),
             ))

@@ -109,47 +109,27 @@ class RAGEngine:
         import time, json as _json
 
         total = len(items)
-        skipped = 0
         llm_done = 0
         llm_errors = 0
-        need_llm = []
+        need_llm = list(enumerate(items))
         results = [None] * total
         t0 = time.time()
 
         def _write_status():
             if not status_path:
                 return
-            done = skipped + llm_done
             elapsed = time.time() - t0
             eta = (elapsed / max(llm_done, 1)) * (len(need_llm) - llm_done) if need_llm and llm_done > 0 else 0
             with open(status_path, "w", encoding="utf-8") as f:
                 _json.dump({
-                    "total": total, "skipped": skipped,
+                    "total": total,
                     "need_llm": len(need_llm), "llm_done": llm_done,
                     "llm_errors": llm_errors,
-                    "progress_pct": round(100 * done / total, 1) if total else 0,
+                    "progress_pct": round(100 * llm_done / total, 1) if total else 0,
                     "elapsed_s": round(elapsed), "eta_s": round(eta),
                 }, f, ensure_ascii=False)
 
-        # Phase 1: search + decide (fast)
-        for i, item in enumerate(items):
-            r = self.judge(
-                error_type=item.get("error_type", ""),
-                error_description=item.get("error_description", ""),
-                source_text=item.get("source_text", ""),
-                target_text=item.get("target_text", ""),
-            )
-            results[i] = r
-            if r["decision"] == "direct_pass":
-                skipped += 1
-                if on_progress:
-                    on_progress(skipped + llm_done, total, item, r)
-            else:
-                need_llm.append((i, item))
-
-        _write_status()
-
-        # Phase 2: LLM review (slow, concurrent)
+        # LLM review (concurrent)
         if need_llm:
             from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -171,7 +151,7 @@ class RAGEngine:
                     if r.get("final_label") is None:
                         llm_errors += 1
                     if on_progress:
-                        on_progress(skipped + llm_done, total, items[idx], r)
+                        on_progress(llm_done, total, items[idx], r)
                     _write_status()
 
         if status_path:
@@ -241,20 +221,13 @@ class RAGEngine:
 
     def _search(self, error_description, error_type, source_text, target_text):
         self._ensure_db()
-        from rag.search import search_similar
+        from rag.search import search_by_term
         return [self._hit_to_dict(h) for h in
-                search_similar(error_description, error_type, 3,
+                search_by_term(error_description, error_type, 3,
                                source_text=source_text, target_text=target_text)]
 
     def _decide(self, hits):
-        if not hits:
-            return "llm_independent"
-        top = hits[0]
-        if top["similarity"] >= 0.90 and top["review_label"] == "误报":
-            return "direct_pass"
-        if top["similarity"] >= self.cfg.threshold_low:
-            return "llm_review"
-        return "llm_independent"
+        return "llm_review" if hits else "llm_independent"
 
     def _llm_review(self, error_type, error_description, source_text, target_text, hits):
         self._ensure_llm()

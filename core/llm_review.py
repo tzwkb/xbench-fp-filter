@@ -93,26 +93,26 @@ async def llm_secondary_review(
     note: str = "",
 ) -> ReviewResult:
     if not search_results:
-        cases_block = "（无匹配的历史案例，请完全依据规则独立判断）"
+        similar_cases_block = "【历史相似案例】\n（无匹配的历史案例，请完全依据规则独立判断）"
     else:
-        top = search_results[0]
-        reason = top.reason or top.false_alarm_reason
-        lines = [
-            "--- 参考案例 ---",
-            f"案例ID: {top.case_id}",
-            f"相似度: {top.similarity:.3f}",
-            f"人工标签: {top.review_label or '（无）'}",
-            f"案例原文: {top.source_text or '（无）'}",
-            f"案例译文: {top.target_text or '（无）'}",
-        ]
-        if reason:
-            lines.append(f"判定依据: {reason}")
-        cases_block = "\n".join(lines)
+        case_parts = []
+        for i, hit in enumerate(search_results[:3]):
+            reason = hit.reason or hit.false_alarm_reason
+            lines = [
+                f"--- 案例 {i + 1} ---",
+                f"案例ID: {hit.case_id}",
+                f"人工标签: {hit.review_label or '（无）'}",
+            ]
+            if reason:
+                lines.append(f"判定依据: {reason}")
+            case_parts.append("\n".join(lines))
 
-    if search_results and search_results[0].similarity < config.SIM_WARN_THRESHOLD:
-        cases_block = f"（以下案例相似度较低（{search_results[0].similarity:.2f}），仅供参考）\n\n" + cases_block
-
-    similar_cases_block = f"【历史相似案例】\n{cases_block}"
+        similar_cases_block = (
+            "【历史相似案例】\n"
+            "以下为同一术语的历史判定案例，仅作参考。\n"
+            "你必须基于当前条目独立应用上述规则作出判断，不得因案例标签直接放行或拦截。\n\n"
+            + "\n\n".join(case_parts)
+        )
 
     note_block = f"\n【备注】\n{note}\n" if note and note.strip() else "\n"
 

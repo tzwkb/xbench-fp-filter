@@ -3,8 +3,8 @@ search.py
 ---------
 Case retrieval module.
 Implements:
-  - Pure vector search (vector_only mode, default) — error_type as semantic signal
-  - SQL hard filter + vector search (sql_filter mode, legacy)
+  - Two-stage retrieval (search_by_term): SQL exact match on 检测词 → ST/TT vector ranking
+  - Pure vector search (search_similar, legacy)
   - Result formatting for human inspection or LLM context construction
 
 Usage (as a module):
@@ -16,6 +16,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Optional
+
+import numpy as np
 
 from rag.store import embed, embed_with_cache, save_query_history, get_faiss_index, build_vector_text, Case, SEARCH_MODE, get_connection
 
@@ -220,17 +222,83 @@ def _fetch_results(filtered: list[tuple[float, int]]) -> list[SearchResult]:
 
 
 # --------------------------------------------------------------------------
-# Decision helper (for future integration with main QA pipeline)
+# Two-stage retrieval (primary path)
+# --------------------------------------------------------------------------
+
+def search_by_term(
+    error_description:  str,
+    error_type:         str,
+    top_k:              int = 3,
+    source_text:        str = "",
+    target_text:        str = "",
+) -> list[SearchResult]:
+    """Two-stage retrieval for Key Term Mismatch.
+
+    Stage 1 — SQL exact match on 检测词 (first segment of error_description).
+    Stage 2 — Vector ranking on source_text + target_text among Stage 1 results.
+    Returns [] if Stage 1 yields no results (caller falls back to llm_independent).
+    """
+    detected_term = error_description.split("|")[0].strip()
+    if not detected_term:
+        return []
+
+    # Stage 1: term-level SQL filter
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM cases WHERE error_type = ? AND error_description LIKE ? AND review_label != '待复核' ORDER BY id",
+        (error_type, f"{detected_term}%"),
+    ).fetchall()
+    conn.close()
+
+    if not rows:
+        return []
+
+    # Stage 2: ST/TT vector ranking within candidates
+    query_has_context = bool(source_text or target_text)
+    candidates_have_context = any(row["source_text"] or row["target_text"] for row in rows)
+
+    if query_has_context and candidates_have_context:
+        query_vec = embed([f"Source: {source_text} | Target: {target_text}"])  # (1, dim)
+        candidate_vecs = embed([
+            f"Source: {row['source_text']} | Target: {row['target_text']}"
+            for row in rows
+        ])  # (n, dim) — already L2-normalised by embed()
+
+        sims = (candidate_vecs @ query_vec.T).squeeze()
+        if sims.ndim == 0:
+            sims = np.array([float(sims)])
+
+        ranked_idx = np.argsort(sims)[::-1][:top_k]
+        return [_row_to_result(rows[i], float(sims[i])) for i in ranked_idx]
+
+    # Fallback: no context available — return first top_k from Stage 1 as-is
+    return [_row_to_result(row, similarity=0.0) for row in rows[:top_k]]
+
+
+def _row_to_result(row, similarity: float) -> SearchResult:
+    keys = row.keys()
+    return SearchResult(
+        case_id=row["id"],
+        similarity=similarity,
+        error_type=row["error_type"],
+        error_description=row["error_description"],
+        source_text=row["source_text"],
+        target_text=row["target_text"],
+        review_label=row["review_label"],
+        false_alarm_reason=row["false_alarm_reason"],
+        annotator=row["annotator"],
+        annotated_at=row["annotated_at"],
+        severity=row["severity"] if "severity" in keys else "Minor",
+        reason=row["reason"] if "reason" in keys else "",
+    )
+
+
+# --------------------------------------------------------------------------
+# Decision helper
 # --------------------------------------------------------------------------
 def decide(results: list[SearchResult]) -> str:
-    if not results:
-        return "llm_independent"
-
-    top = results[0]
-
-    if top.similarity >= THRESHOLD_LOW:
-        return "llm_review"
-    return "llm_independent"
+    """has results → llm_review, no results → llm_independent."""
+    return "llm_review" if results else "llm_independent"
 
 
 # --------------------------------------------------------------------------
