@@ -14,17 +14,23 @@ import threading
 from dataclasses import dataclass, asdict
 from typing import Callable, Optional
 
-import nest_asyncio
-nest_asyncio.apply()
+import concurrent.futures
 
 
 def _run_async(coro):
-    """Run a coroutine from any context (main thread or background thread)."""
+    """Run a coroutine from any context (main thread or background thread).
+
+    Do NOT use nest_asyncio here: patching the running loop breaks anyio's
+    backend detection and makes Streamlit 1.5x's static-file server return
+    500 on every asset. When a loop is already running in this thread, run
+    the coroutine in a fresh worker thread instead of re-entering the loop.
+    """
     try:
-        loop = asyncio.get_running_loop()
-        return loop.run_until_complete(coro)
+        asyncio.get_running_loop()
     except RuntimeError:
         return asyncio.run(coro)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+        return ex.submit(asyncio.run, coro).result()
 
 
 # ── Config schema ─────────────────────────────────────────────────────────────
@@ -176,9 +182,10 @@ def process_file(
                 llm_analysis=analysis,
             )
 
-    pairs = _run_async(
-        asyncio.gather(*[_review_one(i, r) for i, r in enumerate(valid_rows)])
-    )
+    async def _review_all():
+        return await asyncio.gather(*[_review_one(i, r) for i, r in enumerate(valid_rows)])
+
+    pairs = _run_async(_review_all())
     row_results = [r for _, r in sorted(pairs, key=lambda x: x[0])]
 
     total      = len(row_results)

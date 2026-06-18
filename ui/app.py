@@ -15,51 +15,75 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
 
+LOGO = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "logo.jpeg")
+
 from ui.backend import (
     RunConfig, default_config_from_module, apply_config,
     process_file, build_filtered_xlsx, build_analysis_xlsx, build_zip_bytes,
     test_api_connection,
-    get_all_models, add_custom_model, remove_model, PRESET_MODELS,
+    get_all_models, add_custom_model, remove_model,
     start_processing_task, ProcessingTask,
 )
 
 # ── Page config ───────────────────────────────────────────────────────────────
 
 st.set_page_config(
-    page_title="Xbench FP Filter",
-    page_icon="🛠️",
+    page_title="Xbench FP Filter — Langlobal",
+    page_icon=LOGO,
     layout="wide",
     initial_sidebar_state="expanded",
 )
+st.logo(LOGO, size="large")
 
 # ── UI 微调 (无破坏性隐藏，确保侧边栏功能正常) ──────────────────────────────────
 st.markdown("""
 <style>
+    /* Langlobal 品牌配色 — 墨黑/草绿/海蓝/纸白/蓝灰 */
     /* 仅隐藏底部 Streamlit 水印，保留顶部 header 以确保侧边栏按钮正常工作 */
     footer { visibility: hidden; }
-    
+
     /* 优化全局字体，偏向技术风格 */
     html, body, [class*="css"] {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
 
-    /* 数据看板卡片规范化 */
+    /* 数据看板卡片规范化（纸白底 + 蓝灰描边 + 草绿顶饰） */
     div[data-testid="stMetric"] {
         background: #ffffff;
-        border: 1px solid #e2e8f0;
+        border: 1px solid #d6e0ea;
+        border-top: 3px solid #4e9d4e;
         padding: 1rem;
         border-radius: 8px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 1px 2px rgba(29, 33, 37, 0.05);
     }
     div[data-testid="stMetric"] label {
-        color: #475569 !important;
+        color: #3e6e96 !important;
         font-size: 0.85rem !important;
         font-weight: 500 !important;
     }
     div[data-testid="stMetric"] [data-testid="stMetricValue"] {
-        color: #0f172a !important;
+        color: #1d2125 !important;
         font-size: 1.6rem !important;
         font-weight: 600 !important;
+    }
+
+    /* logo 放大（侧栏 + 折叠时顶栏）+ 整体下移 */
+    [data-testid="stSidebarLogo"],
+    [data-testid="stLogo"],
+    [data-testid="stHeaderLogo"] {
+        height: 4rem !important;
+        max-height: 4rem !important;
+        width: auto !important;
+        margin-top: 1rem !important;
+    }
+
+    /* 链接 / 内联 code 用品牌色 */
+    a { color: #3e6e96; }
+    code { color: #35703a; }
+
+    /* 容器描边统一蓝灰 */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        border-radius: 8px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -88,6 +112,10 @@ if "task"           not in st.session_state:
     st.session_state.task = None
 if "zip_cache"      not in st.session_state:
     st.session_state.zip_cache = None
+
+# 在任何 widget 渲染前，结算上一轮挂起的模型选择变更
+if "_pending_sel_model" in st.session_state:
+    st.session_state.sel_model = st.session_state.pop("_pending_sel_model")
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
@@ -301,37 +329,33 @@ def page_settings():
         
         st.markdown("<div style='margin: 1.5rem 0;'></div>", unsafe_allow_html=True)
         st.markdown("**模型选择**")
-        
+
         all_models = get_all_models()
-        if "sel_model" not in st.session_state or st.session_state.sel_model not in all_models:
+        if not st.session_state.sel_model or st.session_state.sel_model not in all_models:
+            st.session_state.sel_model = cfg.model if cfg.model in all_models else (all_models[0] if all_models else "")
+
+        col_m1, col_m2, col_m3, col_m4 = st.columns([3, 2, 1, 1])
+        with col_m1:
             if all_models:
-                st.session_state.sel_model = cfg.model if cfg.model in all_models else all_models[0]
+                st.selectbox("选择模型", all_models, key="sel_model", label_visibility="collapsed")
             else:
-                st.session_state.sel_model = ""
+                st.text_input("模型名称", key="sel_model", label_visibility="collapsed")
+        with col_m2:
+            new_model = st.text_input("添加模型", placeholder="模型 ID", label_visibility="collapsed")
+        with col_m3:
+            add_clicked = st.button("添加", use_container_width=True)
+        with col_m4:
+            del_clicked = st.button("删除", use_container_width=True, disabled=len(all_models) <= 1,
+                                    help="删除当前选中的模型（预置模型将被隐藏，可再次添加恢复）")
 
-        for m in all_models:
-            is_sel = (m == st.session_state.sel_model)
-            c1, c2, c3 = st.columns([1.5, 7, 1])
-            if c1.button("● 当前启用" if is_sel else "○ 选择", key=f"sel_{m}", type="primary" if is_sel else "secondary", use_container_width=True):
-                st.session_state.sel_model = m
-                st.rerun()
-
-            c2.markdown(f"<div style='padding:0.25rem 0;'><code>{m}</code></div>", unsafe_allow_html=True)
-
-            if m not in PRESET_MODELS:
-                if c3.button("✕", key=f"rm_{m}", use_container_width=True, disabled=len(all_models) <= 1):
-                    remove_model(m)
-                    remaining = [x for x in all_models if x != m]
-                    st.session_state.sel_model = remaining[0] if remaining else ""
-                    st.rerun()
-            else:
-                c3.write("")
-
-        c_in, c_btn = st.columns([7.5, 1])
-        new_model = c_in.text_input("自定义模型", placeholder="输入 Model ID...", label_visibility="collapsed")
-        if c_btn.button("添加", use_container_width=True) and new_model.strip():
+        if add_clicked and new_model.strip():
             add_custom_model(new_model.strip())
-            st.session_state.sel_model = new_model.strip()
+            st.session_state._pending_sel_model = new_model.strip()
+            st.rerun()
+        if del_clicked:
+            remove_model(st.session_state.sel_model)
+            remaining = get_all_models()
+            st.session_state._pending_sel_model = remaining[0] if remaining else ""
             st.rerun()
 
     with st.container(border=True):
