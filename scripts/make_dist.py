@@ -59,6 +59,14 @@ def build():
     if os.path.exists(tpl) and not os.path.exists(cfg):
         shutil.copy(tpl, cfg)
 
+    # ---- Windows launchers must be CRLF (cmd.exe misparses LF-only .bat) ----
+    for root, _, files in os.walk(STAGE):
+        for f in files:
+            if f.lower().endswith((".bat", ".cmd")):
+                p = os.path.join(root, f)
+                b = open(p, "rb").read().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+                open(p, "wb").write(b)
+
     # ---- safety asserts: no secret, no customer data ----
     assert not os.path.isdir(os.path.join(STAGE, "data")), "data/ leaked into dist!"
     # read the real key from the source config.py at runtime (never hardcode it here)
