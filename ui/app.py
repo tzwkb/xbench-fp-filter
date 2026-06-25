@@ -67,7 +67,7 @@ st.markdown("""
         font-weight: 600 !important;
     }
 
-    /* logo 放大（侧栏 + 折叠时顶栏）+ 整体下移 */
+    /* logo 放大（侧栏 + 折叠时顶栏）+ 整体下移 + 四角钝化 */
     [data-testid="stSidebarLogo"],
     [data-testid="stLogo"],
     [data-testid="stHeaderLogo"] {
@@ -75,6 +75,7 @@ st.markdown("""
         max-height: 4rem !important;
         width: auto !important;
         margin-top: 1rem !important;
+        border-radius: 12px !important;
     }
 
     /* 链接 / 内联 code 用品牌色 */
