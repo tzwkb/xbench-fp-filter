@@ -1,5 +1,44 @@
 # Xbench FP Filter
 
+<!-- bilingual-readme:start -->
+
+## 双语说明 / Bilingual Documentation
+
+> 本节提供整篇 README 的中英双语维护说明；下方保留原始详细说明、命令、路径和配置示例。
+> This section provides bilingual maintenance notes for the full README; the original detailed notes, commands, paths, and configuration examples are preserved below.
+
+### 中文
+
+**概览**：游戏本地化 QA 误报过滤工具，读取 Xbench 导出的 Excel 报告并用 LLM 判断误报。
+
+**主要能力**：
+- 逐条判断 Xbench QA 条目是否为误报。
+- 输出过滤后报告和分析总表。
+- 面向游戏本地化 QA 审核流程。
+
+**使用方式**：按下方说明准备 Xbench Excel、API 配置和输出目录后运行。
+
+**状态**：该仓库仍按当前 README 的说明维护或使用。
+
+**注意事项**：LLM 判断结果应由 QA/本地化人员抽查确认。
+
+### English
+
+**Overview**: Game-localization QA false-positive filter that reads Xbench Excel reports and uses an LLM to classify false positives.
+
+**Key capabilities**:
+- Evaluates Xbench QA entries one by one.
+- Outputs filtered reports and analysis workbooks.
+- Targets game-localization QA review workflows.
+
+**Usage**: Prepare the Xbench Excel report, API configuration, and output directory as described below.
+
+**Status**: This repository is maintained or used according to the current README notes.
+
+**Notes**: LLM classifications should be spot-checked by QA/localization staff.
+
+<!-- bilingual-readme:end -->
+
 游戏本地化 QA 误报过滤工具。读取 Xbench 导出的 Excel 质检报告，通过 LLM 逐条判定是否为误报，输出过滤后报告和分析总表。
 
 ---
