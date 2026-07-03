@@ -1,40 +1,31 @@
 # Xbench FP Filter
 
-[中文](README.md) | English
+中文 | [English](README.md)
 
-## Overview
 
- Game-localization QA false-positive filter that reads Xbench Excel reports and uses an LLM to classify false positives.
+游戏本地化 QA 误报过滤工具。读取 Xbench 导出的 Excel 质检报告，通过 LLM 逐条判定是否为误报，输出过滤后报告和分析总表。
 
-## Key Capabilities
+---
 
-- Evaluates Xbench QA entries one by one.
-- Outputs filtered reports and analysis workbooks.
-- Targets game-localization QA review workflows.
-
-## Usage
-
- Prepare the Xbench Excel report, API configuration, and output directory as described below.
-
-## Status
-
- This repository is maintained or used according to the current README notes.
-
-## Notes
-
- LLM classifications should be spot-checked by QA/localization staff.
-
-## Command and Configuration Reference
-
-The following code blocks are preserved from the primary README. Commands, paths, and configuration keys are not translated; adjust them for the actual environment.
+## 快速启动
 
 ```
 run.bat
 ```
 
+首次运行自动检测 Python：内嵌版 → 系统 PATH → 自动运行 `setup.bat` 下载。
+
+或手动：
+
 ```
 streamlit run ui/app.py
 ```
+
+首次运行前在 Streamlit「参数设置」页填入 API Key 和 Base URL。
+
+---
+
+## 目录结构
 
 ```
 fp-filter/
@@ -66,6 +57,29 @@ fp-filter/
     └── 已导入/           待导入的案例数据
 ```
 
+**当前 UI 流程：** 解析 → LLM 独立判断，不走向量检索。
+**RAG 后端** 代码框架已搭建但仍在完善中，尚未接入 UI 主流程。
+
+---
+
+## 配置
+
+`config.py` 为运行时默认值，Streamlit UI 启动后通过「参数设置」页覆盖（`ui_backend.apply_config`）。
+
+| 参数 | 说明 |
+|---|---|
+| `LLM_API_KEY` | API 密钥 |
+| `LLM_API_BASE` | API Base URL（兼容 OpenAI 格式） |
+| `LLM_MODEL` | 模型 ID |
+| `LLM_TEMPERATURE` | 采样温度，建议 0.3 |
+| `LLM_MAX_TOKENS` | 单次最大输出 token |
+| `THRESHOLD_HIGH/LOW` | 向量检索决策阈值（仅 RAG 模式） |
+| `SIM_WARN_THRESHOLD` | 向 LLM 提示低相似度参考的阈值 |
+
+---
+
+## RAG 后端接入
+
 ```python
 from rag.engine import RAGEngine
 
@@ -85,6 +99,20 @@ result = engine.judge(
 )
 ```
 
-## Detailed Technical Notes
+当前 `ui_backend.process_file` 传入 `search_results=[]`，改为实际检索结果即可接回。
 
-The primary README keeps the original technical details, history notes, full commands, and file layout. This file maintains the English version of the core documentation; consult the primary README code blocks and paths when exact commands are needed.
+---
+
+## 决策路由（RAG 模式）
+
+| 路径 | 触发条件 | 处理 |
+|---|---|---|
+| `direct_pass` | sim ≥ 0.99 且命中误报案例 | 直接判误报，跳过 LLM |
+| `llm_review` | sim ≥ 0.60 | LLM 结合检索案例二次判断 |
+| `llm_independent` | sim < 0.60 或无匹配 | LLM 仅依据规则独立判断 |
+
+---
+
+## License
+
+MIT
