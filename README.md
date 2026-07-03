@@ -1,7 +1,10 @@
 # Xbench FP Filter
 
-English | [中文](README_ZH.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.x-blue.svg)](https://www.python.org/)
+[![Xbench](https://img.shields.io/badge/Xbench-QA%20workflow-blueviolet.svg)](https://www.xbench.net/)
 
+English | [中文](README_ZH.md)
 
 ## Overview
 
