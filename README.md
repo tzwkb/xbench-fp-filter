@@ -20,10 +20,6 @@ English | [中文](README_ZH.md)
 
  Prepare the Xbench Excel report, API configuration, and output directory as described below.
 
-## Status
-
- This repository is maintained or used according to the current README notes.
-
 ## Notes
 
  LLM classifications should be spot-checked by QA/localization staff.
@@ -88,7 +84,3 @@ result = engine.judge(
     target_text="Guards, haul him off to Kaifeng.",
 )
 ```
-
-## Detailed Technical Notes
-
-This README keeps the English version of the core documentation. Code blocks, paths, commands, and file-layout examples are kept literal so they can be copied and checked against the repository.
