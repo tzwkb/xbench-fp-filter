@@ -1,6 +1,6 @@
 # Xbench FP Filter
 
-中文 | [English](README.md)
+[English](README.md) | 中文
 
 
 游戏本地化 QA 误报过滤工具。读取 Xbench 导出的 Excel 质检报告，通过 LLM 逐条判定是否为误报，输出过滤后报告和分析总表。
