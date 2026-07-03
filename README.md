@@ -1,6 +1,6 @@
 # Xbench FP Filter
 
-[中文](README_ZH.md) | English
+English | [中文](README_ZH.md)
 
 
 ## Overview
@@ -27,7 +27,7 @@
 
 ## Command and Configuration Reference
 
-The following code blocks are preserved from the primary README. Commands, paths, and configuration keys are not translated; adjust them for the actual environment.
+The following code blocks keep commands, paths, filenames, and configuration keys literal; explanatory comments are translated for the English README.
 
 ```
 run.bat
@@ -39,32 +39,32 @@ streamlit run ui/app.py
 
 ```
 fp-filter/
-├── ui/                  前端模块
-│   ├── app.py           Streamlit 页面路由、组件渲染、进度轮询
-│   └── backend.py       UI 与后端适配层：RunConfig、ProcessingTask、导出函数、模型管理
-├── run.bat / setup.bat  Windows 一键启动 / 环境初始化（下载嵌入版 Python）
-├── config.py / config_template.py  运行时配置及脱敏模板
-├── requirements.txt     Python 依赖
+├── ui/                  frontend modules
+│   ├── app.py           Streamlit page routing, component rendering, progress polling
+│   └── backend.py       UI/backend adapter: RunConfig, ProcessingTask, export functions, model management
+├── run.bat / setup.bat  one-click Windows launcher / environment initialization (downloads embedded Python)
+├── config.py / config_template.py  runtime config and sanitized template
+├── requirements.txt     Python dependencies
 │
-├── core/                核心 LLM 模块
-│   ├── xbench.py        Xbench Excel 解析 + 行过滤
-│   └── llm_review.py    LLM 复核：prompt、async 调用、重试、结果解析
+├── core/                core LLM modules
+│   ├── xbench.py        Xbench Excel parsing + row filtering
+│   └── llm_review.py    LLM review: prompts, async calls, retries, result parsing
 │
-├── rag/                 向量检索层 ⚠️ 待完善（实验阶段，功能不完整）
-│   ├── store.py         案例库（SQLite + FAISS + bge-m3 embedding）
-│   ├── search.py        向量检索 + 决策路由
-│   └── engine.py        RAGEngine：完整 RAG 流水线统一入口
+├── rag/                 vector retrieval layer (experimental; incomplete)
+│   ├── store.py         case library (SQLite + FAISS + bge-m3 embedding)
+│   ├── search.py        vector search + decision routing
+│   └── engine.py        RAGEngine: unified entry point for the full RAG pipeline
 │
-├── scripts/             批量测试与评估
-│   ├── run_test.py      RAG 批量测试入口
-│   └── data_calculator.py  评估指标计算（精确率、召回率、F1、F2）
+├── scripts/             batch testing and evaluation
+│   ├── run_test.py      RAG batch test entry point
+│   └── data_calculator.py  metric calculation (precision, recall, F1, F2)
 │
 └── data/
-    ├── database/        SQLite 案例库 + FAISS 索引
-    ├── raw_data/        解析后的 JSON 缓存
-    ├── custom_models.json   用户自定义模型列表（UI 写入）
-    ├── report/          历史测试报告
-    └── 已导入/           待导入的案例数据
+    ├── database/        SQLite case library + FAISS index
+    ├── raw_data/        parsed JSON cache
+    ├── custom_models.json   user custom model list (written by UI)
+    ├── report/          historical test reports
+    └── 已导入/           case data waiting to be imported
 ```
 
 ```python
