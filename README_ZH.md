@@ -26,6 +26,8 @@ streamlit run ui/app.py
 
 首次运行前在 Streamlit「参数设置」页填入 API Key 和 Base URL。
 
+完整安装、手动操作、Agent 指令、验收与故障恢复见 [PM 使用指南](docs/PM使用指南_Xbench误报筛查.html)。
+
 ---
 
 ## 目录结构

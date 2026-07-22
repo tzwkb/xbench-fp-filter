@@ -20,6 +20,8 @@ English | [中文](README_ZH.md)
 
  Prepare the Xbench Excel report, API configuration, and output directory as described below.
 
+ PM setup, manual operation, agent prompts, acceptance, and recovery: [PM Usage Guide (Chinese)](docs/PM使用指南_Xbench误报筛查.html).
+
 ## Notes
 
  LLM classifications should be spot-checked by QA/localization staff.
