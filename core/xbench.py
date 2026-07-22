@@ -140,7 +140,10 @@ def filter_xlsx(src_path: str, keep_rows: set[int], dst_path: str = "") -> str:
         base, ext = os.path.splitext(src_path)
         dst_path = f"{base}_filtered{ext}"
 
-    wb = openpyxl.load_workbook(src_path)
+    # Xbench uses rich-text runs to highlight the exact error span in red.
+    # Without rich_text=True, openpyxl flattens those runs while loading and
+    # permanently drops the highlights when the filtered workbook is saved.
+    wb = openpyxl.load_workbook(src_path, rich_text=True)
     ws = _pick_sheet(wb)
 
     # identify all data rows
@@ -158,12 +161,12 @@ def filter_xlsx(src_path: str, keep_rows: set[int], dst_path: str = "") -> str:
     print(f"[xbench] Deleting {len(to_delete)} rows...")
 
     for rn in to_delete:
-        ws.delete_rows(rn)
+        _delete_row_preserving_dimensions(ws, rn)
 
     # remove orphan group headers
     orphans = _find_orphan_headers(ws)
     for rn in reversed(orphans):
-        ws.delete_rows(rn)
+        _delete_row_preserving_dimensions(ws, rn)
     if orphans:
         print(f"[xbench] Removed {len(orphans)} empty group headers.")
 
@@ -290,6 +293,24 @@ def _find_orphan_headers(ws) -> list[int]:
         if not has_data:
             orphans.append(r)
     return orphans
+
+
+def _delete_row_preserving_dimensions(ws, row_num: int) -> None:
+    dimensions = [
+        (index, dimension)
+        for index, dimension in ws.row_dimensions.items()
+        if index >= row_num
+    ]
+    for index, _ in dimensions:
+        del ws.row_dimensions[index]
+
+    ws.delete_rows(row_num)
+
+    for index, dimension in dimensions:
+        if index == row_num:
+            continue
+        dimension.index = index - 1
+        ws.row_dimensions[index - 1] = dimension
 
 
 # ══════════════════════════════════════════════════════════════════════════════
