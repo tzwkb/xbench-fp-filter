@@ -1,7 +1,10 @@
 # Xbench FP Filter
 
-中文 | [English](README.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.x-blue.svg)](https://www.python.org/)
+[![Xbench](https://img.shields.io/badge/Xbench-QA%20workflow-blueviolet.svg)](https://www.xbench.net/)
 
+[English](README.md) | 中文
 
 游戏本地化 QA 误报过滤工具。读取 Xbench 导出的 Excel 质检报告，通过 LLM 逐条判定是否为误报，输出过滤后报告和分析总表。
 
@@ -22,6 +25,8 @@ streamlit run ui/app.py
 ```
 
 首次运行前在 Streamlit「参数设置」页填入 API Key 和 Base URL。
+
+完整安装、手动操作、Agent 指令、验收与故障恢复见 [PM 使用指南](docs/PM使用指南_Xbench误报筛查.html)。
 
 ---
 
